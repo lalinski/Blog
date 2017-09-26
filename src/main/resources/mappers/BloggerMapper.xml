@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaol.blog.mapper.BloggerMapper">
+
+	<!-- 不配置，默认使用MyBatis的二级缓存，则实体类需要实现序列化 -->
+	<cache />
+
+	<resultMap type="com.xiaol.blog.meta.Blogger" id="BloggerMap">
+		<id property="id" column="blogger_id" />
+		<result property="username" column="username" />
+		<result property="password" column="password" />
+		<result property="avatar" column="avatar" />
+		<result property="github" column="github" />
+		<result property="email" column="email" />
+		<result property="md" column="md" />
+		<result property="html" column="html" />
+	</resultMap>
+
+	<select id="findByUsername" parameterType="String" resultMap="BloggerMap">
+		select blogger_id, username, password, avatar, github, email, md, html
+		from t_blogger where username=#{username}
+	</select>
+	
+	<select id="findBlogger" resultMap="BloggerMap">
+		select blogger_id, username, password, avatar, github, email, md, html
+		from t_blogger
+	</select>
+	
+	<update id="updateAbout" parameterType="com.xiaol.blog.meta.Blogger" >
+		update t_blogger set 
+			md=#{md},
+			html=#{html}
+	</update>
+	
+</mapper>

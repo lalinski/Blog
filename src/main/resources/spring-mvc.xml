@@ -1,0 +1,98 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/mvc
+	http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+	<!-- 去扫描下面的包，找到对应的controller组件 -->
+	<context:component-scan base-package="com.xiaol.blog.web.controller" />
+
+	<!-- 打开注解功能和spring的MessageConverter功能，用于将返回的数据转成对应的类型
+		 例如json、xml，但是需要添加相关jar依赖 -->
+	<mvc:annotation-driven />
+
+	<!-- 静态资源解析，包括js,css,img...，设置后不会被springmvc拦截 -->
+	<mvc:resources location="/css/" mapping="/css/**" />
+	<mvc:resources location="/css/" mapping="/admin/css/**" />
+	<mvc:resources location="/fonts/" mapping="/fonts/**" />
+	<mvc:resources location="/fonts/" mapping="/admin/fonts/**" />
+	<mvc:resources location="/img/" mapping="/img/**" />
+	<mvc:resources location="/img/" mapping="/admin/img/**" />
+	<mvc:resources location="/js/" mapping="/js/**" />
+	<mvc:resources location="/js/" mapping="/admin/js/**" />
+	<mvc:resources location="/lib/" mapping="/lib/**" />
+	<mvc:resources location="/lib/" mapping="/admin/lib/**" />
+	<mvc:resources location="/plugins/" mapping="/plugins/**" />
+	<mvc:resources location="/plugins/" mapping="/admin/plugins/**" />
+    <mvc:resources location="/resources/upload/" mapping="/admin/resources/upload/**" />
+    <mvc:resources location="/resources/upload/" mapping="/resources/upload/**" />
+    <mvc:resources location="/resources/upload/" mapping="/admin/blogUpdateView/resources/upload/**" />
+    <mvc:resources location="/resources/upload/" mapping="//blog/resources/upload/**" />
+ 
+	<!-- 配置freemarker信息 -->
+	<bean id="freemarkerConfig"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+		<property name="templateLoaderPath" value="/freemarker" />
+		<property name="freemarkerSettings">
+			<props>
+				<prop key="defaultEncoding">utf8</prop>
+				<!-- 开启兼容模式，用于处理页面空指针问题，处理办法自动忽略空值 -->
+				<!-- <prop key="classic_compatible">true</prop> -->
+			</props>
+		</property>
+	</bean>
+
+	<!-- 内容协商视图处理，按照后缀名、参数、accept-header顺序匹配 -->
+	<bean
+		class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="viewResolvers">
+			<!-- 在list里面可以配置多个ViewResolver -->
+			<list>
+				<!-- 配置一个FreeMarkerViewResolver -->
+				<bean
+					class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+					<property name="order" value="1" />
+					<!-- 把spring的RequestContext对象暴露为变量request，用于页面获取项目名 -->
+					<property name="requestContextAttribute" value="request" />
+					<!-- 开启缓存，当再次请求时直接拿上次的结果，开发的时候先关闭 -->
+					<property name="cache" value="false" />
+					<property name="prefix" value="" />
+					<property name="suffix" value=".ftl" />
+					<!-- 设置返回内容的编码 -->
+					<property name="contentType" value="text/html; charset=utf-8" />
+				</bean>
+
+				<!-- 配置一个视图解析器 -->
+				<!-- <bean id="viewResolver" -->
+				<!-- class="org.springframework.web.servlet.view.InternalResourceViewResolver"> -->
+				<!-- <property name="prefix" value="/" /> -->
+				<!-- <property name="suffix" value=".jsp" /> -->
+				<!-- </bean> -->
+			</list>
+		</property>
+		<!-- 当上面的ViewResolver无法处理时，交给defaultViews处理 -->
+		<property name="defaultViews">
+			<list>
+				<!-- 将返回的内容转为json -->
+				<bean
+					class="org.springframework.web.servlet.view.json.MappingJackson2JsonView">
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 文件上传 -->
+	 <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"> 
+		<property name="maxUploadSize" value="10000000" />  <!-- 文件最大上传大小，单位字节bytes  -->
+		<property name="defaultEncoding" value="utf-8" /> 
+	 </bean> 
+
+</beans>

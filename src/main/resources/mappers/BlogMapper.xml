@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 命名空间 -->
+<mapper namespace="com.xiaol.blog.mapper.BlogMapper">
+
+	<!-- 使用ehcache缓存框架 -->
+	<cache type="org.mybatis.caches.ehcache.EhcacheCache">
+        <property name="timeToIdleSeconds" value="7200"/>
+        <property name="timeToLiveSeconds" value="7200"/>
+        <!-- 同ehcache参数maxElementsInMemory -->
+		<property name="maxEntriesLocalHeap" value="1000"/>
+		<!-- 同ehcache参数maxElementsOnDisk -->
+        <property name="maxEntriesLocalDisk" value="10000"/>
+        <property name="memoryStoreEvictionPolicy" value="LRU"/>
+	</cache>
+	
+	<!-- resultMap：实体类与表的映射
+		 type：实体类的全路径
+		 id: 实体类与表的映射关系的唯一编号-->
+	<resultMap type="Blog" id="BlogMap">
+		<!-- id：映射主键
+			 result：映射非主键属性
+			 property：实体类的属性
+			 column：表的字段名
+			 timeout：超时时间，默认没有设置，由驱动器自己决定
+			  -->
+		<id property="id" column="blog_id" />
+		<result property="title" column="title" />
+		<result property="md" column="md" />
+		<result property="html" column="html" />
+		<result property="date" column="date" />
+		<result property="updateTime" column="updateTime" />
+	</resultMap>
+
+	<!-- insert：插入语句的标签
+		 id：sql语句的唯一名称
+		 parameterType：入参类型，实体类的全路径名
+		 resultMap：返回类型
+		  -->
+	<insert id="addBlog" parameterType="Blog">
+		insert into t_blog(title, md, html, date, updateTime)
+		values(#{title}, #{md}, #{html}, #{date}, #{updateTime})
+	</insert>
+
+	<delete id="deleteBlogById" parameterType="int">
+		delete from t_blog where blog_id=#{id}
+	</delete>
+
+	<update id="updateBlog" parameterType="Blog">
+		update t_blog set
+			title=#{title},
+			md=#{md},
+			html=#{html},
+			updateTime=#{updateTime}
+		where blog_id=#{id}
+	</update>
+	
+	<select id="findBlogById" parameterType="int" resultMap="BlogMap">
+		select blog_id, title, md, html, date, updateTime from t_blog 
+		where blog_id=#{id} 
+	</select>
+	
+	<!-- 找出创建日期最新的一篇博文 -->
+	<select id="findLastCreateBlog" resultMap="BlogMap">
+		select blog_id, title, md, html, date, updateTime from t_blog 
+		ORDER BY date DESC LIMIT 0,1 
+	</select>
+	
+	<!-- 根据id找到上一篇博文 -->
+	<select id="findNextBlog" resultMap="BlogMap" parameterType="int">
+		SELECT blog_id, title, md, html, date, updateTime from t_blog 
+		where blog_id <![CDATA[ < ]]> #{id} ORDER BY blog_id desc limit 1
+	</select>
+	
+	<!-- 根据id找到下一篇博文 -->
+	<select id="findPreBlog" resultMap="BlogMap" parameterType="int">
+		SELECT blog_id, title, md, html, date, updateTime from t_blog 
+		where blog_id <![CDATA[ > ]]> #{id} ORDER BY blog_id limit 1
+	</select>
+	
+	<!-- 找出所有博文所在的日期（按年月划分），用于页面分类查找 -->
+	<select id="findDateGroup" resultType="String">
+		select DATE_FORMAT(date,'%Y-%m') as dateGroup from t_blog GROUP BY dateGroup
+	</select>
+	
+	<!-- 找出指定年月的博文 -->
+	<select id="findBlogListByDate" resultMap="BlogMap" parameterType="String">
+		select f.* from 
+			(select blog_id, title, md, html, date, updateTime,DATE_FORMAT(date,'%Y-%m') as dateGroup from t_blog) as f
+ 		where f.dateGroup=#{date}
+	</select>
+	
+	<!-- 不分页查全部 -->
+	<select id="findAllBlog" parameterType="Blog" resultMap="BlogMap">
+		select blog_id, title, md, html, date, updateTime from t_blog 
+	</select>
+	
+	<!-- 分页查全部 -->
+	<!-- <select id="findAllBlog" parameterType="Blog" resultMap="BlogMap">
+		select * from t_blog limit #{start},#{size}
+	</select> -->
+</mapper>

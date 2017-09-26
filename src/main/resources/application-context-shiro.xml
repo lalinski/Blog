@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mybatis="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+	http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd
+    http://mybatis.org/schema/mybatis-spring
+  	http://mybatis.org/schema/mybatis-spring.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<!-- 注入自定义realm -->
+		<property name="realm" ref="bloggerRealm" />
+		<!-- 注入session管理器 -->
+<!-- 		<property name="sessionManager" ref="sessionManager" /> -->
+		<!-- 注入缓存管理器 -->
+<!-- 		<property name="cacheManager" ref="shiroCacheManager" /> -->
+	</bean>
+	
+	<!-- 自定义的realm -->
+	<bean id="bloggerRealm" class="com.xiaol.blog.realm.BloggerRealm" />
+
+	<!-- FIXME  MyBatis整合了ehcache，然后shiro整合ehcache时报错
+		Another unnamed CacheManager already exists in the same VM. Please provide unique names for each CacheManager in the config or do one of following:
+		1. Use one of the CacheManager.create() static factory methods to reuse same CacheManager with same name or create one if necessary
+		2. Shutdown the earlier cacheManager before creating new one with same name.
+		The source of the existing CacheManager is: DefaultConfigurationSource [ ehcache.xml or ehcache-failsafe.xml ] -->
+	<!-- 缓存管理器，注意起名字不要冲突了，我就试过和MyBatis整合ehcache时的cacheManager因为id相同项目起不来 -->
+<!-- 	<bean id="shiroCacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager" > -->
+<!-- 		<property name="cacheManagerConfigFile" value="classpath:ehcache.xml"></property> -->
+<!-- 	</bean> -->
+
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<!-- 认证地址，没有认证会请求该地址进行认证 -->
+		<property name="loginUrl" value="/login" />
+		<!-- successUrl建议不配置，认证成功默认跳转到之前请求的地址 -->
+		<!-- <property name="successUrl" value="/admin/homeView" /> -->
+		<!-- 指定没有权限时跳转到的页面 -->
+		<property name="unauthorizedUrl" value="/home" />
+		<!-- 过滤器链定义，从上到下顺序执行。一般将/**放最后 -->
+		<property name="filterChainDefinitions">
+			<value>
+				<!-- 静态资源放行 -->
+				/css/**			= anon
+				/admin/css/**	= anon
+				/admin/fonts/**	= anon
+				/admin/img/**	= anon
+				/admin/js/**	= anon
+				/admin/lib/**	= anon
+				/admin/plugins/**= anon
+				<!-- /admin/开头的请求都需要认证 -->
+				/admin/** 		= authc  <!-- authc -->
+				<!-- logout让shiro清除session -->
+				/admin/quit 	= logout
+				<!-- anon允许匿名访问，也就是不需要认证 -->
+				/** = anon
+			</value>
+		</property>
+	</bean>
+	<!-- 
+		过滤器简称	对应的java类
+		anon		org.apache.shiro.web.filter.authc.AnonymousFilter
+		authc		org.apache.shiro.web.filter.authc.FormAuthenticationFilter
+		authcBasic	org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter
+		perms		org.apache.shiro.web.filter.authz.PermissionsAuthorizationFilter
+		port		org.apache.shiro.web.filter.authz.PortFilter
+		rest		org.apache.shiro.web.filter.authz.HttpMethodPermissionFilter
+		roles		org.apache.shiro.web.filter.authz.RolesAuthorizationFilter
+		ssl			org.apache.shiro.web.filter.authz.SslFilter
+		user		org.apache.shiro.web.filter.authc.UserFilter
+		logout		org.apache.shiro.web.filter.authc.LogoutFilter
+		
+		anon:例子/admins/**=anon 没有参数，表示可以匿名使用。
+		authc:例如/admins/user/**=authc表示需要认证(登录)才能使用，FormAuthenticationFilter是表单认证，没有参数 
+		perms：例子/admins/user/**=perms[user:add:*],参数可以写多个，多个时必须加上引号，并且参数之间用逗号分割，例如/admins/user/**=perms["user:add:*,user:modify:*"]，当有多个参数时必须每个参数都通过才通过，想当于isPermitedAll()方法。
+		user:例如/admins/user/**=user没有参数表示必须存在用户, 身份认证通过或通过记住我认证通过的可以访问，当登入操作时不做检查
+ 	-->
+</beans>
